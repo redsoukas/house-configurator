@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Διαμέρισμα 1.4 · Configurator</title>
+<link rel="icon" href="data:,">
+<style>
+:root{--bg:#efebe5;--panel:#fcfaf7;--ink:#26231f;--mut:#7a736a;--line:#e3ddd3;--acc:#b0703f;--dark:#2f2b26}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink)}
+#panel{position:fixed;top:0;left:0;bottom:0;width:340px;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;z-index:5}
+#panel header{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.tag{background:var(--dark);color:#fff;font-weight:700;border-radius:10px;padding:8px 9px;font-size:14px}
+header h1{font-size:16px;margin:0}header p{margin:2px 0 0;font-size:12px;color:var(--mut)}
+.scroll{overflow:auto;padding:4px 16px 16px;flex:1}
+section{padding:12px 0;border-bottom:1px solid var(--line)}section:last-child{border:0}
+h2{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin:0 0 9px}
+button{font:inherit;cursor:pointer;color:inherit}
+.style{display:flex;gap:10px;align-items:center;width:100%;background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px;margin-bottom:6px;text-align:left}
+.style img{width:84px;height:47px;object-fit:cover;border-radius:6px}
+.style b{display:block;font-size:12.5px}.style small{color:var(--mut);font-size:11px}
+.style.on{border-color:var(--dark);box-shadow:0 0 0 1px var(--dark)}
+.slot{margin-bottom:12px}.slot .ttl{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;margin-bottom:6px}.slot .ttl span{color:var(--mut);font-size:11.5px;text-align:right}
+.sw{display:flex;flex-wrap:wrap;gap:6px}
+.sw button{width:38px;height:38px;border-radius:9px;border:2px solid #fff;box-shadow:0 0 0 1px var(--line);background-size:cover;background-position:center;padding:0;font-size:10px;color:var(--mut)}
+.sw button.orig{background:repeating-linear-gradient(45deg,#f3efe8 0 5px,#e6e0d6 5px 10px)}
+.sw button.on{box-shadow:0 0 0 2px var(--acc)}
+.sw input{width:38px;height:38px;border:0;padding:0;background:none;cursor:pointer}
+.row{display:flex;gap:6px;flex-wrap:wrap}
+.btn{background:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:12.5px}
+.btn:hover{border-color:#c9bfb1}.btn.on{background:var(--dark);color:#fff;border-color:var(--dark)}
+a.btn{text-decoration:none;color:var(--ink);display:inline-block}
+#stage{position:fixed;left:340px;top:0;right:0;bottom:0;overflow:hidden;cursor:grab}
+#stage.panning{cursor:grabbing}
+#view{position:absolute;left:0;top:0;transform-origin:0 0}
+#out{display:block;width:100%;height:100%}
+#ed{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+#ed polygon{stroke-width:1.5;vector-effect:non-scaling-stroke}
+#ed .inc{fill:rgba(60,170,90,.18);stroke:#2f9a52}#ed .exc{fill:rgba(210,60,50,.18);stroke:#c8392d}
+#ed .drawing{fill:none;stroke:#1d6fd6;stroke-dasharray:4 3}
+#ed circle{fill:#fff;stroke:#1d1d1d;stroke-width:1.2;vector-effect:non-scaling-stroke;cursor:move}
+#ed circle.ref{fill:#f2b400}
+#hud{position:fixed;right:12px;top:12px;display:flex;gap:6px;z-index:4}
+#hud .btn{box-shadow:0 2px 10px rgba(0,0,0,.08)}
+#busy{position:fixed;right:12px;bottom:12px;background:rgba(38,35,31,.85);color:#fff;font-size:12px;padding:6px 10px;border-radius:8px;display:none;z-index:4}
+#editbar{display:none;margin-top:10px;background:#f5f1ea;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:12px}
+#editbar.show{display:block}
+#editbar label{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 0}
+#editbar select,#editbar input[type=range]{flex:1}
+#editbar p{color:var(--mut);margin:8px 0 0;line-height:1.5}
+#loader{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;z-index:20;transition:opacity .4s}
+#loader.hide{opacity:0;pointer-events:none}.spin{width:36px;height:36px;border:3px solid #ddd5c9;border-top-color:var(--acc);border-radius:50%;animation:s 1s linear infinite}@keyframes s{to{transform:rotate(360deg)}}
+@media (max-width:760px){#panel{top:auto;width:auto;right:0;height:48vh;border-right:0;border-top:1px solid var(--line)}#stage{left:0;bottom:48vh}}
+</style>
+</head>
+<body>
+<aside id="panel">
+ <header><span class="tag">1.4</span><div><h1>Διαμέρισμα 1.4</h1><p>74 τ.μ. · Configurator υλικών</p></div></header>
+ <div class="scroll">
+  <section><h2>Στυλ</h2><div id="styles"></div></section>
+  <section><h2>Υλικά</h2><div id="materials"></div></section>
+  <section><h2>Εργαλεία</h2>
+   <div class="row">
+    <button class="btn" id="resetAll">Επαναφορά υλικών</button>
+    <button class="btn" id="dl">Λήψη εικόνας</button>
+    <button class="btn" id="editToggle">Επεξεργασία περιοχών</button>
+    <a class="btn" href="3d.html">3D προβολή →</a>
+   </div>
+   <div id="editbar">
+    <label>Επιφάνεια <select id="edSlot"></select></label>
+    <div class="row" style="margin:6px 0">
+     <button class="btn" data-mode="inc">+ Περιοχή</button>
+     <button class="btn" data-mode="exc">− Εξαίρεση</button>
+     <button class="btn" data-mode="ref">Δείγμα χρώματος</button>
+     <button class="btn" id="showMask">Μάσκα</button>
+    </div>
+    <label>Ανοχή χρώματος <input type="range" id="tol" min="0.01" max="0.4" step="0.005"></label>
+    <label>Σκιές (min φωτ.) <input type="range" id="lmin" min="0" max="1" step="0.01"></label>
+    <label>Λάμψεις (max φωτ.) <input type="range" id="lmax" min="1" max="2.5" step="0.01"></label>
+    <div class="row"><button class="btn" id="clearRefs">Καθαρισμός δειγμάτων</button><button class="btn" id="resetRegions">Αρχικές περιοχές</button><button class="btn" id="exportRegions">Εξαγωγή JSON</button></div>
+    <p>Κλικ για σημεία πολυγώνου · διπλό κλικ / Enter για κλείσιμο · Esc ακύρωση<br>Σύρε τις κουκκίδες · δεξί κλικ σε κουκκίδα = διαγραφή · Alt+κλικ σε πολύγωνο = διαγραφή<br>Οι αλλαγές αποθηκεύονται αυτόματα σε αυτόν τον browser.</p>
+   </div>
+  </section>
+ </div>
+</aside>
+<main id="stage"><div id="view"><canvas id="out"></canvas><svg id="ed" viewBox="0 0 1024 576" preserveAspectRatio="none"></svg></div></main>
+<div id="hud"><button class="btn" id="before" title="Κράτα πατημένο">Πριν / Μετά</button><button class="btn" id="fit">Προσαρμογή</button></div>
+<div id="busy">Υπολογισμός…</div>
+<div id="loader"><div class="spin"></div><div id="lmsg">Φόρτωση εικόνων και υλικών…</div></div>
+
+<script>
+"use strict";
+/* ======================= ΕΙΚΟΝΕΣ & ΠΕΡΙΟΧΕΣ (συντεταγμένες σε pixels της εικόνας 1024×576) ======================= */
+const SLOTS={floor:'Δάπεδο σαλονιού & υπνοδωματίων',bath:'Πλακάκια λουτρού',deck:'Δάπεδο / deck μπαλκονιών',cab:'Ντουλάπια κουζίνας',counter:'Πάγκος κουζίνας',walls:'Χρώμα τοίχων'};
+const ORDER=['walls','floor','bath','deck','cab','counter'];
+const STYLES={
+ scandi:{file:'images/scandinavian.png',name:'Σκανδιναβικό & Φυσικό Ξύλο',desc:'Έκδοση 1',regions:{
+  floor:{inc:[[343,85,830,85,830,300,838,300,838,482,198,482,198,300,343,300]],exc:[[455,343,632,343,632,484,455,484],[585,70,805,70,805,163,585,163],[612,178,812,178,812,302,612,302],[690,290,832,290,832,352,690,352],[418,350,447,350,447,478,418,478],[395,120,520,120,520,152,395,152],[275,298,378,298,378,336,275,336],[635,370,662,370,662,478,635,478]],refs:[[505,170],[560,330],[300,355],[690,470]],tol:.12,lum:[.35,1.4]},
+  bath:{inc:[[455,345,632,345,632,482,455,482]],exc:[],refs:[[470,470],[600,470],[540,440]],tol:.07,lum:[.35,1.5]},
+  deck:{inc:[[218,95,337,95,340,288,218,288],[208,290,180,300,155,325,140,370,138,420,145,465,162,497,200,508,200,290]],exc:[],refs:[[250,250],[170,420]],tol:.08,lum:[.4,1.3]},
+  cab:{inc:[[587,118,805,118,805,163,587,163],[735,75,802,75,802,163,735,163],[695,212,812,212,812,232,695,232],[612,276,812,276,812,300,612,300]],exc:[],refs:[[620,140],[770,120]],tol:.1,lum:[.3,1.6]},
+  counter:{inc:[[598,110,735,110,735,127,598,127],[695,180,806,180,806,262,618,262,618,255,695,255]],exc:[],refs:[[750,205]],tol:.05,lum:[.75,1.15]},
+  walls:{inc:[[343,62,595,62,595,142,343,142],[300,280,555,280,555,300,300,300]],exc:[],refs:[[420,90]],tol:.04,lum:[.7,1.2]},
+ }},
+ lux:{file:'images/contemporary.png',name:'Σύγχρονη Πολυτέλεια & Γήινοι Τόνοι',desc:'Έκδοση 2',regions:{
+  floor:{inc:[[345,80,810,80,810,482,190,482,190,292,345,292]],exc:[[455,345,622,345,622,484,455,484],[416,352,455,352,455,482,416,482],[690,140,808,140,808,280,612,280,612,250,690,250],[690,288,808,288,808,335,690,335],[395,115,512,115,512,138,395,138],[275,288,370,288,370,335,275,335],[368,160,548,160,548,288,368,288],[262,368,368,368,368,482,262,482],[682,362,802,362,802,470,682,470],[585,142,692,142,692,228,585,228],[230,310,280,310,280,350,230,350]],refs:[[600,330],[300,345],[650,470],[560,140],[700,250],[560,420]],tol:.13,lum:[.2,2.4]},
+  bath:{inc:[[458,348,622,348,622,482,458,482]],exc:[],refs:[[480,420],[600,470]],tol:.08,lum:[.3,1.6]},
+  deck:{inc:[[222,82,328,82,328,272,222,272],[200,292,170,315,135,355,110,400,112,445,130,480,160,500,198,505]],exc:[],refs:[[250,250],[175,470]],tol:.08,lum:[.4,1.5]},
+  cab:{inc:[[693,143,797,143,797,212,693,212],[612,250,655,250,655,285,612,285]],exc:[],refs:[[720,170],[630,265]],tol:.1,lum:[.3,1.8]},
+  counter:{inc:[[750,188,782,188,782,268,655,268,655,255,750,255]],exc:[],refs:[[765,215]],tol:.05,lum:[.7,1.2]},
+  walls:{inc:[[345,60,810,60,810,125,345,125]],exc:[],refs:[[575,100],[650,110]],tol:.05,lum:[.6,1.3]},
+ }},
+ japandi:{file:'images/japandi.png',name:'Industrial Japandi & Πατητή Τσιμεντοκονία',desc:'Έκδοση 3',regions:{
+  floor:{inc:[[375,80,848,80,848,292,862,292,862,487,195,487,195,292,375,292]],exc:[[478,348,652,348,652,487,478,487],[712,150,845,150,845,292,638,292,638,248,712,248],[435,348,478,348,478,487,435,487],[245,312,410,312,410,338,245,338],[700,295,835,295,835,365,700,365],[415,118,525,118,525,158,415,158],[630,90,725,90,725,145,630,145],[272,372,392,372,392,487,272,487],[660,405,795,405,795,487,660,487]],refs:[[520,240],[300,360],[690,450],[600,160]],tol:.06,lum:[.4,1.35]},
+  bath:{inc:[[482,350,650,350,650,487,482,487]],exc:[],refs:[[505,455],[620,470]],tol:.05,lum:[.6,1.2]},
+  deck:{inc:[[250,88,362,88,362,292,250,292],[205,298,170,320,145,350,130,395,132,445,150,485,185,505,200,505]],exc:[],refs:[[270,200],[175,420]],tol:.1,lum:[.35,1.5]},
+  cab:{inc:[[713,165,840,165,840,292,640,292,640,250,713,250]],exc:[],refs:[[745,210],[660,265]],tol:.1,lum:[.3,1.8]},
+  counter:{inc:[[715,165,790,165,790,200,715,200],[640,252,840,252,840,266,640,266]],exc:[],refs:[[750,185]],tol:.05,lum:[.7,1.2]},
+  walls:{inc:[[375,72,760,72,760,140,375,140]],exc:[],refs:[[450,100]],tol:.1,lum:[.5,1.5]},
+ }},
+};
+const IW=1024,IH=576,K=1.5,W=Math.round(IW*K),H=Math.round(IH*K),N=W*H;
+const PXM=65*K,FORE=.86; // pixels ανά μέτρο στην εικόνα, συμπίεση βάθους της προοπτικής
+
+/* ======================= PROCEDURAL ΥΦΕΣ ======================= */
+const rng=s=>()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+const hx=h=>{const n=parseInt(h.slice(1),16);return[n>>16&255,n>>8&255,n&255]};
+const shade=(h,a)=>{const f=v=>Math.max(0,Math.min(255,Math.round(a<0?v*(1+a):v+(255-v)*a)));const[r,g,b]=hx(h);return`rgb(${f(r)},${f(g)},${f(b)})`};
+const rgba=(h,a)=>{const[r,g,b]=hx(h);return`rgba(${r},${g},${b},${a})`};
+const S=1024;
+function cv(){const c=document.createElement('canvas');c.width=c.height=S;return[c,c.getContext('2d')]}
+function noise(ctx,amt,r){const d=ctx.getImageData(0,0,S,S),a=d.data;for(let i=0;i<a.length;i+=4){const n=(r()-.5)*amt*2;a[i]+=n;a[i+1]+=n;a[i+2]+=n}ctx.putImageData(d,0,0)}
+function blotches(ctx,x,y,w,h,n,str,r,wrap){const offs=wrap?[-S,0,S]:[0];
+ for(let i=0;i<n;i++){const cx=x+r()*w,cy=y+r()*h,rad=8+r()*Math.min(w,h)*.3,col=r()<.5?'0,0,0':'255,255,255',a=str*r();
+  for(const ox of offs)for(const oy of offs){const X=cx+ox,Y=cy+oy;if(X+rad<0||X-rad>S||Y+rad<0||Y-rad>S)continue;
+   const g=ctx.createRadialGradient(X,Y,0,X,Y,rad);g.addColorStop(0,`rgba(${col},${a})`);g.addColorStop(1,`rgba(${col},0)`);ctx.fillStyle=g;ctx.fillRect(X-rad,Y-rad,rad*2,rad*2)}}}
+function veins(ctx,x,y,w,h,col,n,r,lw){const st=Math.max(w,h)/26;
+ for(let v=0;v<n;v++){let px=x+r()*w,py=y+r()*h,an=Math.PI*.25+(r()-.5)*1.2;const pts=[[px,py]];
+  for(let s=0;s<25+r()*30;s++){an+=(r()-.5)*.6;px+=Math.cos(an)*st;py+=Math.sin(an)*st;pts.push([px,py])}
+  const a=.2+r()*.4,b=lw*(.6+r()*1.4);ctx.lineJoin='round';
+  for(const[wd,al]of[[b*6,a*.1],[b*2.4,a*.25],[b,a]]){ctx.strokeStyle=rgba(col,al);ctx.lineWidth=wd;ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke()}}}
+function grainRect(ctx,x,y,w,h,o,r,vertical){ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();ctx.fillStyle=shade(o.base,(r()-.5)*o.var);ctx.fillRect(x,y,w,h);
+ const across=vertical?w:h,len=vertical?h:w,lines=Math.round(Math.min(across,120)*.6*(o.density||1)),ph=r()*10;
+ for(let g=0;g<lines;g++){const off=r()*across,amp=1+r()*3,fr=.004+r()*.01;ctx.strokeStyle=rgba(o.grain,.04+r()*.14);ctx.lineWidth=.4+r()*1.6;ctx.beginPath();
+  for(let k=0;k<=Math.min(len,S+40);k+=14){const d=off+Math.sin(k*fr+ph+g*.3)*amp;vertical?(k?ctx.lineTo(x+d,y+k):ctx.moveTo(x+d,y+k)):(k?ctx.lineTo(x+k,y+d):ctx.moveTo(x+k,y+d))}ctx.stroke()}
+ ctx.restore();if(o.gap){ctx.strokeStyle=o.gap;ctx.lineWidth=o.gapW||1.5;ctx.strokeRect(x,y,w,h)}}
+function genWood(o){const[c,ctx]=cv(),r=rng(o.seed),n=Math.max(1,Math.round(o.span/o.plankW)),pw=S/n,pl=S*o.plankL/o.span;
+ ctx.fillStyle=o.base;ctx.fillRect(0,0,S,S);for(let i=0;i<n;i++){let y=-r()*pl;while(y<S){grainRect(ctx,i*pw,y,pw,pl,o,r,true);y+=pl}}noise(ctx,4,r);return c}
+function genHerring(o){const[c,ctx]=cv(),r=rng(o.seed),w=o.w,L=o.n*w,span=o.span,k=S/span; // span = πολλαπλάσιο του L·√2
+ ctx.fillStyle=o.gap;ctx.fillRect(0,0,S,S);ctx.save();ctx.translate(0,0);ctx.scale(k,k);ctx.rotate(Math.PI/4);
+ const R=Math.ceil(span*1.6/w);ctx.lineWidth=(o.gapW||1.4)/k;
+ for(let j=-R;j<=R;j++)for(let q=-R*2;q<=R*2;q++){const bx=(q+j*o.n)*w,by=(q-j*o.n)*w;
+  const cx=bx+L/2,cy=by;const rx=cx*Math.SQRT1_2-cy*Math.SQRT1_2,ry=cx*Math.SQRT1_2+cy*Math.SQRT1_2;if(rx<-1||rx>span+1||ry<-1||ry>span+1)continue;
+  ctx.save();ctx.scale(1/k,1/k);grainRect(ctx,bx*k,by*k,L*k,w*k,{...o,gap:o.gap,gapW:o.gapW||1.4},r,false);grainRect(ctx,(bx+L)*k,(by-L+w)*k,w*k,L*k,{...o,gap:o.gap,gapW:o.gapW||1.4},r,true);ctx.restore()}
+ ctx.restore();noise(ctx,4,r);return c}
+function genTiles(o){const[c,ctx]=cv(),r=rng(o.seed),k=S/o.span,tw=o.tw*k,th=o.th*k,gw=Math.max(1.2,o.gw*k);
+ ctx.fillStyle=o.grout;ctx.fillRect(0,0,S,S);const rows=Math.round(S/th),cols=Math.round(S/tw);
+ for(let j=0;j<rows;j++){const off=o.stagger&&j%2?tw/2:0;for(let i=-1;i<=cols;i++){const x=i*tw+off,y=j*th;if(x+tw<0||x>S)continue;
+  const X=x+gw/2,Y=y+gw/2,w=tw-gw,h=th-gw;ctx.save();ctx.beginPath();ctx.rect(X,Y,w,h);ctx.clip();
+  ctx.fillStyle=shade(o.base,(r()-.5)*(o.var||.06));ctx.fillRect(X,Y,w,h);
+  if(o.style==='marble')veins(ctx,X,Y,w,h,o.vein,o.veins,r,1.1);
+  if(o.style==='concrete')blotches(ctx,X,Y,w,h,Math.min(160,Math.max(8,w*h/1600)),.1,r);
+  if(o.style==='travertine'||o.style==='slate'){for(let q=0;q<w*h/900;q++){ctx.fillStyle=r()<.5?`rgba(0,0,0,${.03+r()*.06})`:`rgba(255,255,255,${.03+r()*.07})`;ctx.fillRect(X,Y+r()*h,w,1+r()*4)}
+   if(o.style==='travertine')for(let q=0;q<w*h/2500;q++){ctx.fillStyle='rgba(90,70,40,.25)';ctx.beginPath();ctx.ellipse(X+r()*w,Y+r()*h,1+r()*4,.5+r(),0,0,7);ctx.fill()}}
+  if(o.style==='zellige'){blotches(ctx,X,Y,w,h,6,.22,r);ctx.lineWidth=3;ctx.strokeStyle='rgba(255,255,255,.28)';ctx.strokeRect(X+2,Y+2,w-4,h-4)}
+  if(o.style==='gloss'){const g=ctx.createLinearGradient(X,Y,X,Y+h);g.addColorStop(0,'rgba(255,255,255,.3)');g.addColorStop(.5,'rgba(255,255,255,0)');g.addColorStop(1,'rgba(0,0,0,.07)');ctx.fillStyle=g;ctx.fillRect(X,Y,w,h)}
+  ctx.restore()}}
+ noise(ctx,o.noise||5,r);return c}
+function genConcrete(o){const[c,ctx]=cv(),r=rng(o.seed);ctx.fillStyle=o.base;ctx.fillRect(0,0,S,S);blotches(ctx,0,0,S,S,o.n,o.str,r,true);noise(ctx,o.noise,r);return c}
+function genSlab(o){const[c,ctx]=cv(),r=rng(o.seed);ctx.fillStyle=o.base;ctx.fillRect(0,0,S,S);blotches(ctx,0,0,S,S,140,.05,r,true);veins(ctx,0,0,S,S,o.vein,o.veins,r,o.thick?3:1.6);noise(ctx,3,r);return c}
+function genGranite(o){const[c,ctx]=cv(),r=rng(o.seed);ctx.fillStyle=o.base;ctx.fillRect(0,0,S,S);for(let i=0;i<26000;i++){ctx.fillStyle=o.dots[Math.floor(r()*o.dots.length)];const s=.6+r()*2.2;ctx.fillRect(r()*S,r()*S,s,s)}noise(ctx,6,r);return c}
+function genTerrazzo(o){const[c,ctx]=cv(),r=rng(o.seed);ctx.fillStyle=o.base;ctx.fillRect(0,0,S,S);blotches(ctx,0,0,S,S,60,.05,r,true);
+ for(let i=0;i<o.n;i++){const cx=r()*S,cy=r()*S,rad=2+r()*r()*13,col=o.chips[Math.floor(r()*o.chips.length)],k=5+Math.floor(r()*3),pts=[];
+  for(let j=0;j<k;j++){const a=j/k*Math.PI*2,rr=rad*(.6+r()*.5);pts.push([Math.cos(a)*rr,Math.sin(a)*rr])}ctx.fillStyle=col;
+  for(const ox of[-S,0,S])for(const oy of[-S,0,S]){const X=cx+ox,Y=cy+oy;if(X<-20||X>S+20||Y<-20||Y>S+20)continue;ctx.beginPath();pts.forEach((p,j)=>j?ctx.lineTo(X+p[0],Y+p[1]):ctx.moveTo(X+p[0],Y+p[1]));ctx.fill()}}
+ noise(ctx,4,r);return c}
+
+const HB=.1*4*Math.SQRT2*4; // span ψαροκόκαλου (w=.1,L=.4)
+const OPTIONS={
+ floor:[
+  {id:'oakNatural',name:'Δρυς φυσική',size:2.4,gen:()=>genWood({span:2.4,plankW:.2,plankL:1.6,base:'#b88a5c',grain:'#6d4626',gap:'#5b3c22',var:.14,seed:11})},
+  {id:'oakWhite',name:'Λευκασμένη δρυς',size:2.4,gen:()=>genWood({span:2.4,plankW:.2,plankL:1.8,base:'#dccbb1',grain:'#a88c69',gap:'#9b8466',var:.08,seed:12})},
+  {id:'hbOak',name:'Ψαροκόκαλο δρυς',size:HB,gen:()=>genHerring({span:HB,w:.1,n:4,base:'#c09466',grain:'#7a5232',gap:'#6b4a2c',var:.16,seed:19})},
+  {id:'hbWalnut',name:'Ψαροκόκαλο καρυδιά',size:HB,gen:()=>genHerring({span:HB,w:.1,n:4,base:'#6f4a32',grain:'#3b2416',gap:'#2b1a10',var:.18,seed:20})},
+  {id:'walnut',name:'Καρυδιά',size:2.4,gen:()=>genWood({span:2.4,plankW:.16,plankL:1.2,base:'#6f4a32',grain:'#3b2416',gap:'#2b1a10',var:.16,seed:13})},
+  {id:'micro',name:'Πατητή τσιμεντοκονία',size:3,gen:()=>genConcrete({base:'#a9a59e',n:480,str:.13,noise:10,seed:14})},
+  {id:'marble',name:'Μάρμαρο 60×120',size:2.4,gen:()=>genTiles({span:2.4,tw:.6,th:1.2,base:'#ebe8e3',grout:'#d2cdc5',gw:.004,style:'marble',vein:'#8f8b85',veins:3,var:.04,seed:15})},
+  {id:'travertine',name:'Τραβερτίνη 60×60',size:2.4,gen:()=>genTiles({span:2.4,tw:.6,th:.6,base:'#d9c6a8',grout:'#cbb795',gw:.004,style:'travertine',var:.07,seed:16})},
+  {id:'terrazzo',name:'Terrazzo',size:2,gen:()=>genTerrazzo({base:'#e7e2d9',chips:['#b9b2a6','#8f877b','#d6a985','#6e6a64','#f4f1ea'],n:2400,seed:17})},
+  {id:'porcelainDark',name:'Ανθρακί πορσελάνη 60×120',size:2.4,gen:()=>genTiles({span:2.4,tw:.6,th:1.2,base:'#5d5c59',grout:'#4a4947',gw:.004,style:'concrete',var:.05,seed:18})},
+ ],
+ bath:[
+  {id:'carrara',name:'Carrara 60×60',size:1.8,gen:()=>genTiles({span:1.8,tw:.6,th:.6,base:'#efefed',grout:'#d9d9d6',gw:.004,style:'marble',vein:'#9a9ea4',veins:4,var:.03,seed:21})},
+  {id:'nero',name:'Nero Marquina',size:1.8,gen:()=>genTiles({span:1.8,tw:.6,th:.6,base:'#232325',grout:'#3a3a3c',gw:.004,style:'marble',vein:'#c9c9cc',veins:3,var:.04,seed:27})},
+  {id:'subway',name:'Λευκό metro 7,5×15',size:1.2,gen:()=>genTiles({span:1.2,tw:.15,th:.075,stagger:true,base:'#f4f3ef',grout:'#cfcac2',gw:.005,style:'gloss',var:.05,seed:22})},
+  {id:'zellige',name:'Zellige φασκόμηλο',size:1.2,gen:()=>genTiles({span:1.2,tw:.1,th:.1,base:'#8fa48b',grout:'#e3ded3',gw:.006,style:'zellige',var:.28,seed:23})},
+  {id:'beigeStone',name:'Μπεζ πέτρα 30×60',size:1.8,gen:()=>genTiles({span:1.8,tw:.6,th:.3,stagger:true,base:'#cdb796',grout:'#bba783',gw:.004,style:'travertine',var:.08,seed:24})},
+  {id:'concretePorc',name:'Τσιμεντοειδές 60×120',size:2.4,gen:()=>genTiles({span:2.4,tw:.6,th:1.2,base:'#9d9991',grout:'#86827b',gw:.004,style:'concrete',var:.05,seed:25})},
+  {id:'terrazzo',name:'Terrazzo',size:1.6,gen:()=>genTerrazzo({base:'#ece7de',chips:['#9a948a','#5e5a55','#d9b58f','#c9c3b8'],n:2600,seed:28})},
+ ],
+ deck:[
+  {id:'teak',name:'Deck teak',size:2.1,gen:()=>genWood({span:2.1,plankW:.15,plankL:2.1,base:'#9b6b41',grain:'#5a3a20',gap:'#2a1c11',gapW:5,var:.18,seed:31})},
+  {id:'wpcGrey',name:'Composite γκρι',size:2.1,gen:()=>genWood({span:2.1,plankW:.15,plankL:2.1,base:'#7b766f',grain:'#5f5a54',gap:'#2f2d2a',gapW:5,var:.06,density:1.6,seed:32})},
+  {id:'pavers',name:'Πλάκες τσιμέντου 60×60',size:2.4,gen:()=>genTiles({span:2.4,tw:.6,th:.6,base:'#b8b3a9',grout:'#8e897f',gw:.01,style:'concrete',var:.06,seed:33})},
+  {id:'terracotta',name:'Terracotta 30×30',size:1.8,gen:()=>genTiles({span:1.8,tw:.3,th:.3,base:'#b5683f',grout:'#d9cab4',gw:.01,style:'concrete',var:.18,seed:34})},
+  {id:'travertineOut',name:'Τραβερτίνη εξωτερικού',size:2.4,gen:()=>genTiles({span:2.4,tw:.6,th:.4,stagger:true,base:'#d6c3a3',grout:'#c4b090',gw:.006,style:'travertine',var:.07,seed:35})},
+ ],
+ cab:[
+  {id:'white',name:'Λευκή λάκα ματ',color:'#efede8'},
+  {id:'oak',name:'Καπλαμάς δρυός',size:1.2,gen:()=>genWood({span:1.2,plankW:.3,plankL:3,base:'#c49a6c',grain:'#7d5634',var:.05,seed:41})},
+  {id:'walnut',name:'Καπλαμάς καρυδιάς',size:1.2,gen:()=>genWood({span:1.2,plankW:.3,plankL:3,base:'#6a4630',grain:'#36210f',var:.05,seed:42})},
+  {id:'sage',name:'Πράσινο φασκόμηλο',color:'#9aa791'},
+  {id:'navy',name:'Μπλε navy',color:'#2f3a4d'},
+  {id:'greige',name:'Greige',color:'#c2b8aa'},
+  {id:'graphite',name:'Γραφίτης ματ',color:'#3a3c3f'},
+  {id:'clay',name:'Πηλός',color:'#b4795b'},
+ ],
+ counter:[
+  {id:'carrara',name:'Μάρμαρο Carrara',size:3,gen:()=>genSlab({base:'#efefed',vein:'#8e939a',veins:9,seed:51})},
+  {id:'calacatta',name:'Calacatta Gold',size:3,gen:()=>genSlab({base:'#f5f2ec',vein:'#a88c62',veins:6,thick:true,seed:52})},
+  {id:'nero',name:'Μαύρος γρανίτης',size:1.5,gen:()=>genGranite({base:'#1e1e20',dots:['#55555a','#8a8a90','#2e2e33','#b0aca4'],seed:53})},
+  {id:'concrete',name:'Τσιμεντοκονία',size:2,gen:()=>genConcrete({base:'#8e8a84',n:400,str:.14,noise:12,seed:54})},
+  {id:'oakBlock',name:'Δρυς μασίφ',size:1.2,gen:()=>genWood({span:1.2,plankW:.04,plankL:.9,base:'#c5996a',grain:'#7a5232',gap:'#8e6440',gapW:1,var:.18,seed:55})},
+  {id:'terrazzo',name:'Terrazzo',size:1.5,gen:()=>genTerrazzo({base:'#ece7de',chips:['#c9796a','#8f877b','#d9b58f','#5e6a5d'],n:1800,seed:56})},
+ ],
+ walls:[['#f4f1ea','Ζεστό λευκό'],['#ebe6dc','Off-white'],['#ddd4c6','Greige'],['#cdbca5','Άμμος'],['#b9c3b2','Φασκόμηλο'],['#aeb8c2','Γκρι-μπλε'],['#d8bcaa','Ροζ πηλού'],['#9a968f','Τσιμέντο'],['#5f6a5c','Βαθύ πράσινο']].map(([c,n])=>({id:c,name:n,color:c})),
+};
+
+/* ======================= ΕΠΕΞΕΡΓΑΣΙΑ ΕΙΚΟΝΑΣ ======================= */
+const $=s=>document.querySelector(s);
+const out=$('#out');out.width=W;out.height=H;const octx=out.getContext('2d');
+let cur=null;          // τρέχον στυλ
+const imgs={};         // id -> {img, data(Uint8ClampedArray), L,C1,C2 (Float32Array)}
+const masks={};        // styleId:slot -> {w:Uint8Array, sh:Float32Array}
+const state={};        // styleId -> {slot: optionId|'orig'}
+let regions={};        // styleId -> regions (με αποθήκευση)
+const texCache=new Map();
+let resultData=null;
+
+function loadImg(src){return new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error('Δεν βρέθηκε η εικόνα '+src));i.src=src})}
+function analyse(img){const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');x.imageSmoothingQuality='high';x.drawImage(img,0,0,W,H);
+ const data=x.getImageData(0,0,W,H).data,L=new Float32Array(N),C1=new Float32Array(N),C2=new Float32Array(N);
+ for(let i=0,p=0;i<N;i++,p+=4){const r=data[p],g=data[p+1],b=data[p+2],l=.299*r+.587*g+.114*b;L[i]=l;C1[i]=(r-g)/(l+20);C2[i]=(r+g-2*b)/(2*(l+20))}
+ return{img,data,L,C1,C2}}
+function boxBlur(src,dst,tmp,r){for(let y=0;y<H;y++){let s=0;const o=y*W;for(let x=-r;x<=r;x++)s+=src[o+Math.min(W-1,Math.max(0,x))];
+  for(let x=0;x<W;x++){tmp[o+x]=s/(2*r+1);s+=src[o+Math.min(W-1,x+r+1)]-src[o+Math.max(0,x-r)]}}
+ for(let x=0;x<W;x++){let s=0;for(let y=-r;y<=r;y++)s+=tmp[Math.min(H-1,Math.max(0,y))*W+x];
+  for(let y=0;y<H;y++){dst[y*W+x]=s/(2*r+1);s+=tmp[Math.min(H-1,y+r+1)*W+x]-tmp[Math.max(0,y-r)*W+x]}}}
+function polyMask(rg){const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');x.scale(K,K);
+ const path=p=>{x.beginPath();for(let i=0;i<p.length;i+=2)i?x.lineTo(p[i],p[i+1]):x.moveTo(p[i],p[i+1]);x.closePath()};
+ x.fillStyle='#fff';for(const p of rg.inc){if(p.length>=6){path(p);x.fill()}}
+ x.globalCompositeOperation='destination-out';for(const p of rg.exc){if(p.length>=6){path(p);x.fill()}}
+ const d=x.getImageData(0,0,W,H).data,m=new Uint8Array(N);for(let i=0;i<N;i++)m[i]=d[i*4+3];return m}
+function computeMask(sid,slot){const im=imgs[sid],rg=regions[sid][slot],pm=polyMask(rg);
+ const refs=rg.refs.map(([rx,ry])=>{let l=0,a=0,b=0,n=0;for(let dy=-3;dy<=3;dy++)for(let dx=-3;dx<=3;dx++){const X=Math.round(rx*K)+dx,Y=Math.round(ry*K)+dy;if(X<0||Y<0||X>=W||Y>=H)continue;const i=Y*W+X;l+=im.L[i];a+=im.C1[i];b+=im.C2[i];n++}return n?[l/n,a/n,b/n]:null}).filter(Boolean);
+ const w=new Float32Array(N),A=new Float32Array(N);if(!refs.length)return{w:new Uint8Array(N),sh:new Float32Array(N)};
+ const refL=refs.reduce((s,r)=>s+r[0],0)/refs.length,tol=rg.tol,[lmin,lmax]=rg.lum;
+ for(let i=0;i<N;i++){if(!pm[i])continue;let best=1e9,bl=refL;
+  for(const r of refs){const d=Math.hypot(im.C1[i]-r[1],im.C2[i]-r[2]);if(d<best){best=d;bl=r[0]}}
+  let wc=best<=tol*.6?1:best>=tol?0:1-(best-tol*.6)/(tol*.4);if(!wc)continue;
+  const q=im.L[i]/bl;const wl=q<lmin?Math.max(0,1-(lmin-q)/.08):q>lmax?Math.max(0,1-(q-lmax)/.08):1;
+  w[i]=wc*wl*pm[i]/255;A[i]=im.L[i]*w[i]}
+ // γέμισμα μικρών κενών (νερά ξύλου, αρμοί) – καθαρισμός μεμονωμένων κουκκίδων
+ {const t1=new Float32Array(N),t2=new Float32Array(N),rr=Math.round((rg.fill||(slot==='bath'?3.5:2.5))*K);boxBlur(w,t1,t2,rr);boxBlur(t1,t1,t2,rr);
+  for(let i=0;i<N;i++){if(!pm[i]){w[i]=0;continue}const v=Math.min(1,Math.max(0,(t1[i]-.3)/.35));w[i]=v*v*(3-2*v)*pm[i]/255;A[i]=im.L[i]*w[i]}}
+ // απαλές σκιές: κανονικοποιημένο blur της φωτεινότητας μόνο μέσα στη μάσκα
+ const bw=new Float32Array(N),bA=new Float32Array(N),tmp=new Float32Array(N),r=Math.round(4*K);
+ boxBlur(w,bw,tmp,r);boxBlur(bw,bw,tmp,r);boxBlur(A,bA,tmp,r);boxBlur(bA,bA,tmp,r);
+ // λείανση άκρων της μάσκας
+ const ws=new Float32Array(N);boxBlur(w,ws,tmp,1);
+ // φωτεινότητα αναφοράς = σταθμισμένος μέσος όρος της επιφάνειας (όχι μόνο τα δείγματα)
+ let sL=0,sW=0;for(let i=0;i<N;i++){if(w[i]>.5){sL+=im.L[i]*w[i];sW+=w[i]}}const avgL=sW>0?Math.max(sL/sW,refL*.8):refL;
+ const sh=new Float32Array(N),wu=new Uint8Array(N);
+ for(let i=0;i<N;i++){const m=Math.min(w[i],ws[i]*1.15);if(m<=.01)continue;wu[i]=Math.round(Math.min(1,m)*255);
+  const base=bw[i]>.001?bA[i]/bw[i]:im.L[i],detail=Math.pow(Math.max(.2,im.L[i])/Math.max(1,base),.2);
+  let s=base/avgL*detail;if(s>1)s=1+(1-Math.exp(-(s-1)*1.4))*.32;      // απαλή συμπίεση λάμψεων
+  sh[i]=Math.max(.12,s)}
+ return{w:wu,sh}}
+function texData(slot,opt){const key=slot+':'+opt.id;if(texCache.has(key))return texCache.get(key);
+ const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+ if(opt.gen){if(!opt._c)opt._c=opt.gen();const tw=Math.max(8,Math.round(opt.size*PXM)),th=Math.max(8,Math.round(opt.size*PXM*FORE));
+  const t=document.createElement('canvas');t.width=tw;t.height=th;const tx=t.getContext('2d');tx.imageSmoothingQuality='high';
+  // υποδειγματοληψία σε βήματα για καθαρή υφή
+  let src=opt._c,sw=S,shh=S;while(sw/2>tw*1.5){const h=document.createElement('canvas');h.width=sw/2;h.height=shh/2;const hc=h.getContext('2d');hc.imageSmoothingQuality='high';hc.drawImage(src,0,0,sw/2,shh/2);src=h;sw/=2;shh/=2}
+  tx.drawImage(src,0,0,tw,th);x.fillStyle=x.createPattern(t,'repeat')}else x.fillStyle=opt.color;
+ x.fillRect(0,0,W,H);const d=x.getImageData(0,0,W,H).data;if(texCache.size>14)texCache.delete(texCache.keys().next().value);texCache.set(key,d);return d}
+function getMask(sid,slot){const k=sid+':'+slot;if(!masks[k])masks[k]=computeMask(sid,slot);return masks[k]}
+function compose(){const im=imgs[cur],o=new Uint8ClampedArray(im.data);const st=state[cur];
+ for(const slot of ORDER){const id=st[slot];if(!id||id==='orig')continue;const opt=findOpt(slot,id);if(!opt)continue;
+  const m=getMask(cur,slot),t=texData(slot,opt);
+  for(let i=0,p=0;i<N;i++,p+=4){const a=m.w[i];if(!a)continue;const f=a/255,s=m.sh[i];
+   o[p]=o[p]*(1-f)+t[p]*s*f;o[p+1]=o[p+1]*(1-f)+t[p+1]*s*f;o[p+2]=o[p+2]*(1-f)+t[p+2]*s*f}}
+ resultData=new ImageData(o,W,H);draw()}
+let showMaskOn=false,beforeOn=false;
+function draw(){if(beforeOn){octx.putImageData(new ImageData(new Uint8ClampedArray(imgs[cur].data),W,H),0,0);return}
+ if(!resultData)return;
+ if(showMaskOn&&editing){const m=getMask(cur,edSlot),o=new Uint8ClampedArray(resultData.data);for(let i=0,p=0;i<N;i++,p+=4){const f=m.w[i]/255*.6;o[p]=o[p]*(1-f)+40*f;o[p+1]=o[p+1]*(1-f)+120*f;o[p+2]=o[p+2]*(1-f)+255*f}octx.putImageData(new ImageData(o,W,H),0,0)}
+ else octx.putImageData(resultData,0,0)}
+const findOpt=(slot,id)=>OPTIONS[slot].find(o=>o.id===id)||(slot==='walls'&&id&&id[0]==='#'?{id,name:id,color:id}:null);
+let busyT;function busy(fn){$('#busy').style.display='block';clearTimeout(busyT);busyT=setTimeout(()=>{try{fn()}finally{$('#busy').style.display='none'}},20)}
+
+/* ======================= UI ======================= */
+function thumb(c){const t=document.createElement('canvas');t.width=t.height=96;t.getContext('2d').drawImage(c,0,0,S/2.5,S/2.5,0,0,96,96);return t.toDataURL('image/jpeg',.8)}
+function buildUI(){
+ $('#styles').innerHTML=Object.entries(STYLES).map(([id,s])=>`<button class="style" data-style="${id}"><img src="${s.file}" alt=""><div><b>${s.name}</b><small>${s.desc}</small></div></button>`).join('');
+ $('#materials').innerHTML=Object.keys(SLOTS).map(s=>`<div class="slot"><div class="ttl">${SLOTS[s]}<span id="n-${s}"></span></div><div class="sw"><button class="orig" title="Αρχικό (όπως στην εικόνα)" data-slot="${s}" data-id="orig">αρχ.</button>${OPTIONS[s].map(o=>`<button title="${o.name}" data-slot="${s}" data-id="${o.id}" style="${o.gen?`background-image:url(${thumb(o._c||(o._c=o.gen()))})`:`background:${o.color}`}"></button>`).join('')}${s==='walls'?'<input type="color" id="wallpick" title="Προσαρμοσμένο χρώμα" value="#f4f1ea">':''}</div></div>`).join('');
+ $('#edSlot').innerHTML=Object.entries(SLOTS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
+ document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.style)setStyle(b.dataset.style);
+  else if(b.dataset.slot){state[cur][b.dataset.slot]=b.dataset.id;refresh();busy(compose)}
+  else if(b.dataset.mode){mode=mode===b.dataset.mode?null:b.dataset.mode;drawing=null;refreshEd()}});
+ $('#wallpick').addEventListener('change',e=>{state[cur].walls=e.target.value;refresh();busy(compose)});
+ $('#resetAll').onclick=()=>{for(const s in SLOTS)state[cur][s]='orig';refresh();busy(compose)};
+ $('#dl').onclick=()=>out.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`diamerisma-1.4-${cur}.png`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)});
+ const bf=$('#before');const on=v=>{beforeOn=v;bf.classList.toggle('on',v);draw()};
+ bf.addEventListener('pointerdown',()=>on(true));addEventListener('pointerup',()=>beforeOn&&on(false));
+ $('#fit').onclick=fit;
+}
+function syncURL(){try{const q=new URLSearchParams({style:cur});for(const s in SLOTS)if(state[cur][s]!=='orig')q.set(s,state[cur][s]);history.replaceState(null,'','?'+q)}catch(e){}}
+function refresh(){syncURL();document.querySelectorAll('[data-style]').forEach(b=>b.classList.toggle('on',b.dataset.style===cur));
+ const st=state[cur];document.querySelectorAll('[data-slot]').forEach(b=>b.classList.toggle('on',st[b.dataset.slot]===b.dataset.id));
+ for(const s in SLOTS){const id=st[s],o=findOpt(s,id);$('#n-'+s).textContent=id==='orig'?'Αρχικό':o?o.name:''}}
+async function setStyle(id){cur=id;if(!state[id]){state[id]={};for(const s in SLOTS)state[id][s]='orig'}refresh();refreshEd();busy(compose)}
+
+/* ---------- zoom / pan ---------- */
+const stage=$('#stage'),view=$('#view');let z=1,px=0,py=0;
+function apply(){view.style.width=W/K+'px';view.style.height=H/K+'px';view.style.transform=`translate(${px}px,${py}px) scale(${z})`}
+function fit(){const r=stage.getBoundingClientRect();z=Math.min(r.width/IW,r.height/IH)*.98;px=(r.width-IW*z)/2;py=(r.height-IH*z)/2;apply()}
+stage.addEventListener('wheel',e=>{e.preventDefault();const r=stage.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top,nz=Math.min(8,Math.max(.3,z*Math.exp(-e.deltaY*.0015)));
+ px=mx-(mx-px)*nz/z;py=my-(my-py)*nz/z;z=nz;apply()},{passive:false});
+let pan=null;
+stage.addEventListener('pointerdown',e=>{if(e.button!==0||dragV||(editing&&mode))return;pan={x:e.clientX-px,y:e.clientY-py};stage.classList.add('panning')});
+addEventListener('pointermove',e=>{if(pan){px=e.clientX-pan.x;py=e.clientY-pan.y;apply()}});
+addEventListener('pointerup',()=>{pan=null;stage.classList.remove('panning')});
+addEventListener('resize',fit);
+
+/* ---------- επεξεργασία περιοχών ---------- */
+let editing=false,edSlot='floor',mode=null,drawing=null,dragV=null;
+const svg=$('#ed'),NS='http://www.w3.org/2000/svg';
+const LS='apt14-regions-v1';
+function saveRegions(){try{localStorage.setItem(LS,JSON.stringify(regions))}catch(e){}}
+function svgPt(e){const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;const q=p.matrixTransform(svg.getScreenCTM().inverse());return[Math.round(q.x*10)/10,Math.round(q.y*10)/10]}
+function el(t,a){const n=document.createElementNS(NS,t);for(const k in a)n.setAttribute(k,a[k]);return n}
+function refreshEd(){svg.innerHTML='';$('#editbar').classList.toggle('show',editing);$('#editToggle').classList.toggle('on',editing);
+ document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('on',b.dataset.mode===mode));$('#showMask').classList.toggle('on',showMaskOn);
+ svg.style.pointerEvents=editing?'auto':'none';draw();if(!editing||!cur)return;
+ const rg=regions[cur][edSlot];$('#edSlot').value=edSlot;$('#tol').value=rg.tol;$('#lmin').value=rg.lum[0];$('#lmax').value=rg.lum[1];
+ const r=3.5/z;
+ for(const kind of['inc','exc'])rg[kind].forEach((p,pi)=>{const poly=el('polygon',{class:kind,points:p.join(' ')});
+  poly.addEventListener('click',e=>{if(e.altKey){rg[kind].splice(pi,1);changed()}});svg.appendChild(poly);
+  for(let i=0;i<p.length;i+=2){const c=el('circle',{cx:p[i],cy:p[i+1],r});
+   c.addEventListener('pointerdown',e=>{if(e.button!==0)return;e.stopPropagation();dragV={p,i};c.setPointerCapture(e.pointerId)});
+   c.addEventListener('pointermove',e=>{if(dragV&&dragV.p===p&&dragV.i===i){const[x,y]=svgPt(e);p[i]=x;p[i+1]=y;c.setAttribute('cx',x);c.setAttribute('cy',y);poly.setAttribute('points',p.join(' '))}});
+   c.addEventListener('pointerup',()=>{if(dragV){dragV=null;changed()}});
+   c.addEventListener('contextmenu',e=>{e.preventDefault();p.splice(i,2);if(p.length<6)rg[kind].splice(pi,1);changed()});svg.appendChild(c)}});
+ rg.refs.forEach(([x,y],i)=>{const c=el('circle',{cx:x,cy:y,r:r*1.3,class:'ref'});c.addEventListener('contextmenu',e=>{e.preventDefault();rg.refs.splice(i,1);changed()});svg.appendChild(c)});
+ if(drawing){svg.appendChild(el('polyline',{class:'drawing',points:drawing.pts.join(' '),fill:'none',stroke:'#1d6fd6','stroke-width':1.5,'vector-effect':'non-scaling-stroke'}));
+  for(let i=0;i<drawing.pts.length;i+=2)svg.appendChild(el('circle',{cx:drawing.pts[i],cy:drawing.pts[i+1],r}))}}
+let chT;function changed(){saveRegions();delete masks[cur+':'+edSlot];refreshEd();clearTimeout(chT);chT=setTimeout(()=>busy(compose),120)}
+svg.addEventListener('click',e=>{if(!editing||!mode||e.altKey||e.target.tagName==='circle')return;const pt=svgPt(e);
+ if(mode==='ref'){regions[cur][edSlot].refs.push(pt);changed();return}
+ if(e.detail>1)return;if(!drawing)drawing={kind:mode,pts:[]};drawing.pts.push(...pt);refreshEd()});
+svg.addEventListener('dblclick',finishDraw);
+function finishDraw(){if(drawing&&drawing.pts.length>=6){regions[cur][edSlot][drawing.kind].push(drawing.pts);drawing=null;changed()}else{drawing=null;refreshEd()}}
+addEventListener('keydown',e=>{if(!editing)return;if(e.key==='Enter')finishDraw();if(e.key==='Escape'){drawing=null;mode=null;refreshEd()}});
+$('#editToggle').onclick=()=>{editing=!editing;mode=null;drawing=null;refreshEd()};
+$('#edSlot').onchange=e=>{edSlot=e.target.value;drawing=null;refreshEd()};
+for(const[id,fn]of[['tol',(rg,v)=>rg.tol=v],['lmin',(rg,v)=>rg.lum[0]=v],['lmax',(rg,v)=>rg.lum[1]=v]])$('#'+id).addEventListener('input',e=>{fn(regions[cur][edSlot],+e.target.value);changed()});
+$('#showMask').onclick=()=>{showMaskOn=!showMaskOn;refreshEd()};
+$('#clearRefs').onclick=()=>{regions[cur][edSlot].refs=[];changed()};
+$('#resetRegions').onclick=()=>{regions[cur][edSlot]=structuredClone(STYLES[cur].regions[edSlot]);changed()};
+$('#exportRegions').onclick=()=>{const b=new Blob([JSON.stringify(regions,null,1)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='regions.json';a.click()};
+// ενημέρωση μεγέθους κουκκίδων με το zoom
+const _apply=apply;apply=function(){_apply();if(editing)svg.querySelectorAll('circle').forEach(c=>c.setAttribute('r',(c.classList.contains('ref')?4.5:3.5)/z))};
+
+/* ======================= ΕΚΚΙΝΗΣΗ ======================= */
+(async()=>{
+ try{
+  regions={};let saved={};try{saved=JSON.parse(localStorage.getItem(LS)||'{}')}catch(e){}
+  for(const id in STYLES){regions[id]={};for(const s in SLOTS)regions[id][s]=saved[id]&&saved[id][s]?saved[id][s]:structuredClone(STYLES[id].regions[s])}
+  const list=await Promise.all(Object.entries(STYLES).map(async([id,s])=>[id,await loadImg(s.file)]));
+  for(const[id,img]of list)imgs[id]=analyse(img);
+  await new Promise(r=>setTimeout(r,20));
+  buildUI();fit();
+  const q=new URLSearchParams(location.search),sid=STYLES[q.get('style')]?q.get('style'):'scandi';
+  state[sid]={};for(const s in SLOTS){const v=q.get(s);state[sid][s]=v&&findOpt(s,v)?v:'orig'}
+  await setStyle(sid);
+  $('#loader').classList.add('hide');
+ }catch(err){$('.spin').style.display='none';$('#lmsg').textContent=(location.protocol==='file:'?'Άνοιξε τη σελίδα μέσω server (π.χ. Netlify ή python3 -m http.server), όχι με διπλό κλικ. ':'')+err.message;console.error(err)}
+})();
+</script>
+</body>
+</html>
